@@ -1,0 +1,91 @@
+k=0.529177249
+Folder="2 3 4 5 6 7"
+for f in $Folder
+do
+
+total_atoms=$(awk '/ATOMIC_POSITIONS/ {block_start=NR} END {if (block_start) print block_start}' "$f" | xargs -I{} tail -n +"{}" "$f" | awk '/ATOMIC_POSITIONS/,/^$/' | tail -n +2 | grep -E '[A-Za-z][A-Za-z0-9]*[[:space:]]' | awk '!/^END$/ {print $1}' | sort | uniq -c | sort -nr | tee /dev/stderr | awk '{sum += $1} END {print sum-1}')
+
+
+echo $total_atoms>> $f.xyz
+echo PCM >> $f.xyz
+
+
+alat=$(grep  -A 0 CELL_PARAMETERS $f |tail -n 1|sed -n 's/.*alat=\([^)]*\).*/\1/p')         
+echo "$alat" >> alat_text_$f.txt 
+
+thevalue=`awk '{print $1}' < alat_text_$f.txt`
+echo $thevalue > thevalue_$f.txt
+
+grep -A 1 "CELL_PARA"  $f | tail -1 > a_au_$f.txt            
+a_au=`awk '{print $1}' < a_au_$f.txt`
+
+grep -A 2 "CELL_PARA"  $f | tail -1 > b_au_$f.txt            
+b_au=`awk '{print $2}' < b_au_$f.txt`
+
+grep -A 3 "CELL_PARA" $f | tail -1 > c_au_$f.txt            
+C_au=`awk '{print $3}' < c_au_$f.txt`
+
+
+A1=$(echo  $a_au \* $k | bc -l)
+A=$(echo  $A1 \* $thevalue | bc -l)
+A=$(printf "%.9f" "$A")
+echo "A = $A" >> "$f%.txt"
+
+B1=$(echo  $b_au \* $k | bc -l)
+B=$(echo  $B1 \* $thevalue | bc -l)
+B=$(printf "%.9f" "$B")
+echo "B = $B" >> "$f%.txt"
+
+C1=$(echo  $C_au \* $k | bc -l)
+C=$(echo  $C1 \* $thevalue | bc -l)
+C=$(printf "%.9f" "$C")
+echo "C = $C" >> "$f%.txt"
+
+
+cat > $f.txt <<EOF
+$A 0.0 0.0
+0.0 $B 0.0
+0.0 0.0 $C
+EOF
+echo "Cell matrix written to $f%matrix.txt"
+
+grep -A $total_atoms ATOMIC_POSITIONS $f | tail -n $total_atoms | \
+
+# Input file (replace with your actual file name)
+
+ # Replace with the total number of atoms
+
+# Cell parameters (replace with actual values)
+
+# Extract and process atomic positions
+grep -A $total_atoms ATOMIC_POSITIONS $f | tail -n $total_atoms | \
+awk -v a="$A" -v b="$B" -v c="$C" ' NF >= 4 && $1 ~ /^[A-Za-z]/ {
+    # Wrap fractional coordinates
+    x = $2 - int($2)
+    y = $3 - int($3)
+    z = $4 - int($4)
+
+    # Ensure positive wrapping for negative coordinates
+    x = (x < 0) ? x + 1 : x
+    y = (y < 0) ? y + 1 : y
+    z = (z < 0) ? z + 1 : z
+
+    # Convert fractional to Cartesian
+    cart_x = x * a
+    cart_y = y * b
+    cart_z = z * c
+
+    # Output Cartesian coordinates
+    printf "%s %.9f %.9f %.9f\n", $1, cart_x, cart_y, cart_z
+}' >> $f.xyz
+
+
+echo "Processed atomic positions saved to $f.xyz"
+
+
+rm a_au_$f.txt
+rm b_au_$f.txt
+rm c_au_$f.txt
+rm thevalue_$f.txt
+rm alat_text_$f.txt
+done
