@@ -8,6 +8,7 @@ Two scripts will be found here: 1) count_atoms11 and 2) Bond_Analysis.py
 2) Bond_Analysis.py: The script asks the user to enter the file name which it will be the start of the iteration. After that, It will show intra and inter-molecular length and angle as indices to highlight the donor and acceptor atoms along with their bond length and angle to be tracked all over the iterations. Lastly, the chosen indices will be appended in a txt file titled with the corresponding bond and atom type.
 
 
-   Note: 1. It is advised to view the desired bond using any visualization package before the first run or ignition.
-         2. count_Atoms11 is developed based on Quantum Espresso inputs and outputs.
-         3. Bond_Analysis.py start working on files as XYZ prepared from count_atoms11. 
+   Notes:
+            1. It is advised to view the desired bond using any visualization package before the first run or ignition.
+            2. count_Atoms11 is developed based on Quantum Espresso inputs and outputs.
+            3. Bond_Analysis.py start working on files as XYZ prepared from count_atoms11. 
